@@ -92,6 +92,13 @@ public
 # TernJS port file
 .tern-port
 
+
+# Python
+venv/
+.venv/
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
 __pycache__/
-*.pyc
+*.py[cod]
 backend/data/
