@@ -1,3 +1,9 @@
+import TripForm from "@/components/TripForm";
+
 export default function PlanPage() {
-  return <h1>Plan</h1>;
+  return (
+    <div className="flex w-full justify-center py-8">
+      <TripForm />
+    </div>
+  );
 }
