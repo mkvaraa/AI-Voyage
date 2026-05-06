@@ -1,0 +1,115 @@
+{
+  "title": "3 Days in Rome: Ancient Wonders & Italian Flavors",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-07-01",
+      "stops": [
+        {
+          "id": "r1d1s1",
+          "name": "Colosseum",
+          "type": "attraction",
+          "lat": 41.8902,
+          "lng": 12.4922,
+          "duration_minutes": 150,
+          "notes": "Start early to beat the crowds. Skip-the-line ticket recommended. Combo ticket includes Roman Forum and Palatine Hill.",
+          "booking_url": "https://colosseo.it/en/"
+        },
+        {
+          "id": "r1d1s2",
+          "name": "Roman Forum",
+          "type": "attraction",
+          "lat": 41.8925,
+          "lng": 12.4853,
+          "duration_minutes": 120,
+          "notes": "Walk through the heart of ancient Rome. Wear comfortable shoes; terrain is uneven. Audio guide highly recommended.",
+          "booking_url": "https://colosseo.it/en/area/foro-romano-palatino/"
+        },
+        {
+          "id": "r1d1s3",
+          "name": "Roscioli Salumeria con Cucina",
+          "type": "restaurant",
+          "lat": 41.8946,
+          "lng": 12.4737,
+          "duration_minutes": 90,
+          "notes": "Iconic Roman trattoria famous for cacio e pepe and carbonara. Reservations essential, especially for dinner.",
+          "booking_url": "https://www.salumeriaroscioli.com/"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-07-02",
+      "stops": [
+        {
+          "id": "r1d2s1",
+          "name": "Vatican Museums & Sistine Chapel",
+          "type": "attraction",
+          "lat": 41.9065,
+          "lng": 12.4536,
+          "duration_minutes": 210,
+          "notes": "Book the earliest entry slot. Dress code enforced: shoulders and knees covered. Don't miss the Raphael Rooms.",
+          "booking_url": "https://m.museivaticani.va/content/museivaticani-mobile/en.html"
+        },
+        {
+          "id": "r1d2s2",
+          "name": "St. Peter's Basilica",
+          "type": "attraction",
+          "lat": 41.9022,
+          "lng": 12.4539,
+          "duration_minutes": 120,
+          "notes": "Free entry but expect security lines. Climb the dome for panoramic views of Rome (extra fee, 551 steps or partial lift).",
+          "booking_url": "https://www.vatican.va/various/basiliche/san_pietro/index_en.htm"
+        },
+        {
+          "id": "r1d2s3",
+          "name": "Hotel Artemide",
+          "type": "hotel",
+          "lat": 41.9019,
+          "lng": 12.4956,
+          "duration_minutes": 600,
+          "notes": "4-star hotel near Termini Station. Excellent breakfast buffet and rooftop terrace. Walking distance to many attractions.",
+          "booking_url": "https://www.hotelartemide.it/"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-07-03",
+      "stops": [
+        {
+          "id": "r1d3s1",
+          "name": "Trevi Fountain",
+          "type": "attraction",
+          "lat": 41.9009,
+          "lng": 12.4833,
+          "duration_minutes": 45,
+          "notes": "Visit early morning (before 8 AM) to avoid massive crowds. Toss a coin over your left shoulder for a return trip to Rome.",
+          "booking_url": "https://www.turismoroma.it/en/places/trevi-fountain"
+        },
+        {
+          "id": "r1d3s2",
+          "name": "Pantheon",
+          "type": "attraction",
+          "lat": 41.8986,
+          "lng": 12.4769,
+          "duration_minutes": 60,
+          "notes": "Free entry but timed-ticket required on weekends. Best-preserved Roman building with an oculus open to the sky.",
+          "booking_url": "https://www.pantheonroma.com/"
+        },
+        {
+          "id": "r1d3s3",
+          "name": "Armando al Pantheon",
+          "type": "restaurant",
+          "lat": 41.8993,
+          "lng": 12.4763,
+          "duration_minutes": 90,
+          "notes": "Family-run trattoria steps from the Pantheon. Try the saltimbocca alla romana and tonnarelli cacio e pepe. Book weeks ahead.",
+          "booking_url": "https://www.armandoalpantheon.it/"
+        }
+      ]
+    }
+  ],
+  "total_budget_estimate": 1850,
+  "currency": "USD"
+}
