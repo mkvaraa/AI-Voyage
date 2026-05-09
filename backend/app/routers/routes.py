@@ -1,14 +1,15 @@
-import json
 import secrets
-from datetime import date, timedelta
+from datetime import timedelta
 
-import aiosqlite
-from fastapi import APIRouter, Depends
+from aiosqlite import IntegrityError
+from fastapi import APIRouter, HTTPException
 
-from app.database.connection import get_db
+from app.database.crud import save_route
 from app.models.schemas import Day, RouteResponse, Stop, TripRequest
 
 router = APIRouter(tags=["routes"])
+
+MAX_SLUG_ATTEMPTS = 5
 
 
 class RouteResponseWithSlug(RouteResponse):
@@ -95,17 +96,20 @@ def _build_hardcoded_route(req: TripRequest) -> RouteResponse:
 
 
 @router.post("/route", response_model=RouteResponseWithSlug)
-async def create_route(
-    trip: TripRequest,
-    db: aiosqlite.Connection = Depends(get_db),
-):
+async def create_route(trip: TripRequest):
     route = _build_hardcoded_route(trip)
-    slug = secrets.token_urlsafe(6)
 
-    await db.execute(
-        "INSERT INTO routes (slug, data_json) VALUES (?, ?)",
-        (slug, route.model_dump_json()),
-    )
-    await db.commit()
+    for _ in range(MAX_SLUG_ATTEMPTS):
+        slug = secrets.token_urlsafe(6)
+        try:
+            await save_route(slug, route)
+            break
+        except IntegrityError:
+            continue
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail="Could not generate a unique slug, please retry",
+        )
 
     return RouteResponseWithSlug(slug=slug, **route.model_dump())
