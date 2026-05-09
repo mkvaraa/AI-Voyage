@@ -1,11 +1,11 @@
-import { NavLink } from "react-router";
+import { NavLink } from 'react-router';
 
 export default function Navbar() {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
       isActive
-        ? "bg-primary text-primary-foreground"
-        : "text-foreground hover:bg-accent hover:text-accent-foreground"
+        ? 'bg-primary text-primary-foreground'
+        : 'text-foreground hover:bg-accent hover:text-accent-foreground'
     }`;
 
   return (
