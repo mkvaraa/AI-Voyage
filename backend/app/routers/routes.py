@@ -2,10 +2,9 @@ import secrets
 from datetime import timedelta
 
 from aiosqlite import IntegrityError
-from fastapi import APIRouter, HTTPException
-
 from app.database.crud import save_route
 from app.models.schemas import Day, RouteResponse, Stop, TripRequest
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter(tags=["routes"])
 

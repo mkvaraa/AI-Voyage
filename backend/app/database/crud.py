@@ -1,7 +1,6 @@
 import json
 
 import aiosqlite
-
 from app.database.connection import DATABASE_PATH
 from app.models.schemas import RouteResponse
 

@@ -1,4 +1,4 @@
-import TripForm from "@/components/TripForm";
+import TripForm from '@/components/TripForm';
 
 export default function PlanPage() {
   return (

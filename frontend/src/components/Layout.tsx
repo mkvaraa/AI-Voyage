@@ -1,7 +1,7 @@
-import { Suspense } from "react";
-import { Outlet } from "react-router";
-import { Loader2 } from "lucide-react";
-import Navbar from "./Navbar";
+import { Suspense } from 'react';
+import { Outlet } from 'react-router';
+import { Loader2 } from 'lucide-react';
+import Navbar from './Navbar';
 
 function PageSpinner() {
   return (

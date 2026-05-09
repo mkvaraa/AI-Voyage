@@ -2,7 +2,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - ./backend/data:/app/data
     env_file:
@@ -13,7 +13,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - '3000:80'
     depends_on:
       - backend
     networks:

@@ -1,44 +1,28 @@
-import { useId, useState } from "react";
-import {
-  Controller,
-  useForm,
-  useWatch,
-  type DefaultValues,
-  type Resolver,
-} from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { format, formatISO } from "date-fns";
-import { CalendarIcon, Loader2, Plus, X } from "lucide-react";
-import * as yup from "yup";
+import { useId, useState } from 'react';
+import { Controller, useForm, useWatch, type DefaultValues, type Resolver } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { format, formatISO } from 'date-fns';
+import { CalendarIcon, Loader2, Plus, X } from 'lucide-react';
+import * as yup from 'yup';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const INTEREST_OPTIONS = [
-  { value: "culture", label: "Culture" },
-  { value: "food", label: "Food" },
-  { value: "nature", label: "Nature" },
-  { value: "adventure", label: "Adventure" },
-  { value: "shopping", label: "Shopping" },
+  { value: 'culture', label: 'Culture' },
+  { value: 'food', label: 'Food' },
+  { value: 'nature', label: 'Nature' },
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'shopping', label: 'Shopping' },
 ] as const;
 
-type PresetInterest = (typeof INTEREST_OPTIONS)[number]["value"];
+type PresetInterest = (typeof INTEREST_OPTIONS)[number]['value'];
 
 const PRESET_INTERESTS = new Set<string>(INTEREST_OPTIONS.map((o) => o.value));
 
@@ -49,23 +33,20 @@ const tripSchema = yup.object({
   destination: yup
     .string()
     .trim()
-    .required("Destination is required")
-    .max(120, "Destination is too long"),
-  startDate: yup
-    .date()
-    .typeError("Pick a start date")
-    .required("Start date is required"),
+    .required('Destination is required')
+    .max(120, 'Destination is too long'),
+  startDate: yup.date().typeError('Pick a start date').required('Start date is required'),
   endDate: yup
     .date()
-    .typeError("Pick an end date")
-    .required("End date is required")
-    .min(yup.ref("startDate"), "End date must be on or after the start date"),
+    .typeError('Pick an end date')
+    .required('End date is required')
+    .min(yup.ref('startDate'), 'End date must be on or after the start date'),
   budget: yup
     .number()
-    .typeError("Budget must be a number")
-    .required("Budget is required")
-    .min(50, "Minimum budget is $50")
-    .max(50000, "Maximum budget is $50,000"),
+    .typeError('Budget must be a number')
+    .required('Budget is required')
+    .min(50, 'Minimum budget is $50')
+    .max(50000, 'Maximum budget is $50,000'),
   interests: yup
     .array()
     .of(
@@ -74,11 +55,14 @@ const tripSchema = yup.object({
         .trim()
         .required()
         .min(1)
-        .max(MAX_INTEREST_LENGTH, `Each interest must be ${MAX_INTEREST_LENGTH} characters or fewer`)
+        .max(
+          MAX_INTEREST_LENGTH,
+          `Each interest must be ${MAX_INTEREST_LENGTH} characters or fewer`
+        )
     )
-    .min(1, "Pick at least one interest")
+    .min(1, 'Pick at least one interest')
     .max(MAX_INTERESTS, `You can pick up to ${MAX_INTERESTS} interests`)
-    .required("Pick at least one interest"),
+    .required('Pick at least one interest'),
 });
 
 export type TripFormValues = yup.InferType<typeof tripSchema>;
@@ -93,14 +77,14 @@ export type TripPayload = {
 
 const toPayload = (values: TripFormValues): TripPayload => ({
   destination: values.destination,
-  start_date: formatISO(values.startDate, { representation: "date" }),
-  end_date: formatISO(values.endDate, { representation: "date" }),
+  start_date: formatISO(values.startDate, { representation: 'date' }),
+  end_date: formatISO(values.endDate, { representation: 'date' }),
   budget: values.budget,
   interests: values.interests,
 });
 
 const DEFAULT_VALUES: DefaultValues<TripFormValues> = {
-  destination: "",
+  destination: '',
   interests: [],
 };
 
@@ -119,14 +103,14 @@ export default function TripForm() {
     // the runtime behavior is correct, so we narrow the type here.
     resolver: yupResolver(tripSchema) as Resolver<TripFormValues>,
     defaultValues: DEFAULT_VALUES,
-    mode: "onTouched",
+    mode: 'onTouched',
   });
 
-  const startDate = useWatch({ control, name: "startDate" });
+  const startDate = useWatch({ control, name: 'startDate' });
 
   const onSubmit = (values: TripFormValues) => {
     const payload = toPayload(values);
-    console.log("Trip plan submitted:", payload);
+    console.log('Trip plan submitted:', payload);
   };
 
   return (
@@ -138,22 +122,14 @@ export default function TripForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          noValidate
-          className="flex flex-col gap-5"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <Field
-            label="Destination"
-            htmlFor={destinationId}
-            error={errors.destination?.message}
-          >
+        <form noValidate className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
+          <Field label="Destination" htmlFor={destinationId} error={errors.destination?.message}>
             <Input
               id={destinationId}
               placeholder="e.g. Lisbon, Portugal"
               autoComplete="off"
               aria-invalid={Boolean(errors.destination)}
-              {...register("destination")}
+              {...register('destination')}
             />
           </Field>
 
@@ -184,20 +160,14 @@ export default function TripForm() {
                     onBlur={field.onBlur}
                     placeholder="Pick end date"
                     invalid={Boolean(fieldState.error)}
-                    disabled={(date) =>
-                      startDate ? date < startDate : false
-                    }
+                    disabled={(date) => (startDate ? date < startDate : false)}
                   />
                 </Field>
               )}
             />
           </div>
 
-          <Field
-            label="Budget"
-            htmlFor={budgetId}
-            error={errors.budget?.message}
-          >
+          <Field label="Budget" htmlFor={budgetId} error={errors.budget?.message}>
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-sm text-muted-foreground">
                 $
@@ -212,7 +182,7 @@ export default function TripForm() {
                 placeholder="1500"
                 className="pl-6 pr-12"
                 aria-invalid={Boolean(errors.budget)}
-                {...register("budget")}
+                {...register('budget')}
               />
               <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs font-medium text-muted-foreground">
                 USD
@@ -240,7 +210,7 @@ export default function TripForm() {
                 Planning...
               </>
             ) : (
-              "Plan my trip"
+              'Plan my trip'
             )}
           </Button>
         </form>
@@ -289,7 +259,7 @@ function InterestsField({
   error?: string;
 }) {
   const inputId = useId();
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState('');
   const [hint, setHint] = useState<string | null>(null);
 
   const customInterests = value.filter((v) => !PRESET_INTERESTS.has(v));
@@ -325,7 +295,7 @@ function InterestsField({
       return;
     }
     setHint(null);
-    setDraft("");
+    setDraft('');
     onChange([...value, trimmed]);
   };
 
@@ -357,15 +327,13 @@ function InterestsField({
             <Label
               key={option.value}
               className={cn(
-                "cursor-pointer rounded-lg border border-input bg-transparent px-3 py-2 transition-colors hover:bg-muted",
-                checked && "border-primary bg-primary/5"
+                'cursor-pointer rounded-lg border border-input bg-transparent px-3 py-2 transition-colors hover:bg-muted',
+                checked && 'border-primary bg-primary/5'
               )}
             >
               <Checkbox
                 checked={checked}
-                onCheckedChange={(state) =>
-                  togglePreset(option.value, state === true)
-                }
+                onCheckedChange={(state) => togglePreset(option.value, state === true)}
               />
               <span>{option.label}</span>
             </Label>
@@ -406,7 +374,7 @@ function InterestsField({
               if (hint) setHint(null);
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === 'Enter') {
                 e.preventDefault();
                 addCustom();
               }
@@ -428,10 +396,7 @@ function InterestsField({
           </Button>
         </div>
         {hint ? (
-          <p
-            id={`${inputId}-hint`}
-            className="text-xs text-muted-foreground"
-          >
+          <p id={`${inputId}-hint`} className="text-xs text-muted-foreground">
             {hint}
           </p>
         ) : null}
@@ -475,7 +440,7 @@ function DateField({
           className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
         >
           <CalendarIcon />
-          {value ? format(value, "PPP") : <span>{placeholder}</span>}
+          {value ? format(value, 'PPP') : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

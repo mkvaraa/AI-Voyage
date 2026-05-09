@@ -1,7 +1,6 @@
 import os
 
 import aiosqlite
-
 from app.database.connection import DATABASE_PATH
 
 

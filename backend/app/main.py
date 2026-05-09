@@ -1,10 +1,9 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 from app.database.init_db import init_db
 from app.routers.health import router as health_router
 from app.routers.placeholder import router as placeholder_router
 from app.routers.routes import router as routes_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="AI-Voyage API")
 
