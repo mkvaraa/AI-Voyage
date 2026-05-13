@@ -1,10 +1,10 @@
 import json
 import os
 
+from app.models.schemas import RouteResponse, TripRequest
 from google import genai
 from google.genai import types
-
-from app.models.schemas import TripRequest
+from pydantic import ValidationError
 
 SYSTEM_PROMPT = """You are a travel route planner. Return ONLY valid JSON matching this schema exactly — no markdown, no explanation, no extra keys:
 
@@ -42,7 +42,33 @@ Rules:
 """
 
 
-async def generate_route(request: TripRequest) -> dict:
+def _ensure_stop_ids(parsed: dict) -> dict:
+    """Auto-generate stop IDs if Gemini forgot them.
+
+    Stops without a non-empty `id` are assigned `stop_{day}_{idx:03d}`,
+    where `day` is the day's `day` field (falling back to its position)
+    and `idx` is the stop's 1-based position within that day.
+    """
+    days = parsed.get("days")
+    if not isinstance(days, list):
+        return parsed
+
+    for day_pos, day in enumerate(days, start=1):
+        if not isinstance(day, dict):
+            continue
+        day_num = day.get("day", day_pos)
+        stops = day.get("stops")
+        if not isinstance(stops, list):
+            continue
+        for idx, stop in enumerate(stops, start=1):
+            if not isinstance(stop, dict):
+                continue
+            if not stop.get("id"):
+                stop["id"] = f"stop_{day_num}_{idx:03d}"
+    return parsed
+
+
+async def generate_route(request: TripRequest) -> RouteResponse:
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
     user_prompt = (
@@ -69,6 +95,13 @@ async def generate_route(request: TripRequest) -> dict:
         raise ValueError("Empty response from Gemini")
 
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
     except json.JSONDecodeError as e:
         raise ValueError(f"Gemini returned invalid JSON: {e}") from e
+
+    parsed = _ensure_stop_ids(parsed)
+
+    try:
+        return RouteResponse(**parsed)
+    except ValidationError as e:
+        raise ValueError(f"Gemini response failed schema validation: {e}") from e
