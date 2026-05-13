@@ -40,4 +40,6 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - run: pip install -r requirements.txt
-      - run: python -m pytest --no-header -q
+      - run: python -m pytest tests/ -v
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
