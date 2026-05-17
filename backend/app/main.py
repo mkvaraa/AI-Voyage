@@ -1,9 +1,13 @@
-from app.database.init_db import init_db
-from app.routers.health import router as health_router
-from app.routers.placeholder import router as placeholder_router
-from app.routers.routes import router as routes_router
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from app.database.init_db import init_db  # noqa: E402
+from app.routers.health import router as health_router  # noqa: E402
+from app.routers.placeholder import router as placeholder_router  # noqa: E402
+from app.routers.routes import router as routes_router  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 app = FastAPI(title="AI-Voyage API")
 

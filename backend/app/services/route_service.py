@@ -97,7 +97,7 @@ async def generate_route(request: TripRequest) -> RouteResponse:
         system_instruction=SYSTEM_PROMPT,
         response_mime_type="application/json",
         temperature=0.7,
-        max_output_tokens=2000,
+        max_output_tokens=8192,
         thinking_config=types.ThinkingConfig(thinking_budget=0),
         http_options=types.HttpOptions(timeout=_GEMINI_TIMEOUT_MS),
     )
@@ -133,6 +133,22 @@ async def generate_route(request: TripRequest) -> RouteResponse:
     text = response.text
     if not text:
         raise ValueError("Empty response from Gemini")
+
+    finish_reason = None
+    try:
+        finish_reason = response.candidates[0].finish_reason
+    except (AttributeError, IndexError, TypeError):
+        pass
+    if finish_reason and str(finish_reason).endswith("MAX_TOKENS"):
+        logger.error(
+            "Gemini response truncated by MAX_TOKENS (got %d chars). "
+            "Increase max_output_tokens.",
+            len(text),
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="AI response was truncated, please try again",
+        )
 
     try:
         parsed = json.loads(text)
