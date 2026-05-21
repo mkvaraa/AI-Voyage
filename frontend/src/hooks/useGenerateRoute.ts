@@ -1,33 +1,17 @@
-import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import type { ErrorResponse, RouteResponseWithSlug, TripRequest } from '@/types/route';
+import { useMutation } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 
-export interface TripRequest {
-  origin: string;
-  destination: string;
-  departure_date: string;
-  return_date?: string;
-  interests: string[];
-  budget?: string;
-}
+const generateRoute = async (data: TripRequest): Promise<RouteResponseWithSlug> => {
+  const response = await api.post<RouteResponseWithSlug>('/api/route', data);
+  return response.data;
+};
 
-export interface RouteResponse {
-  id: string;
-  origin: string;
-  destination: string;
-  departure_date: string;
-  return_date?: string;
-  stops: Array<{
-    city: string;
-    country: string;
-    days: number;
-    highlights: string[];
-  }>;
-  summary: string;
-}
-
-export function useGenerateRoute() {
-  return useMutation({
-    mutationFn: (body: TripRequest) =>
-      api.post<RouteResponse>('/api/route', body).then((res) => res.data),
+const useGenerateRoute = () => {
+  return useMutation<RouteResponseWithSlug, AxiosError<ErrorResponse>, TripRequest>({
+    mutationFn: generateRoute,
   });
-}
+};
+
+export default useGenerateRoute;

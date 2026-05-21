@@ -7,12 +7,15 @@ from app.models.schemas import RouteResponse, TripRequest
 from fastapi import HTTPException
 from google import genai
 from google.api_core import exceptions as google_exceptions
+from google.genai import errors as genai_errors
 from google.genai import types
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 
-_RETRYABLE_EXCEPTIONS = (
+# The legacy google-api-core exceptions still cover transport-level timeouts;
+# google-genai raises its own ServerError (5xx) / ClientError (4xx incl. 429).
+_RETRYABLE_LEGACY_EXCEPTIONS = (
     google_exceptions.DeadlineExceeded,
     google_exceptions.ServiceUnavailable,
     google_exceptions.ResourceExhausted,
@@ -20,6 +23,16 @@ _RETRYABLE_EXCEPTIONS = (
 _MAX_ATTEMPTS = 3
 _BACKOFF_SECONDS = (1, 2, 4)
 _GEMINI_TIMEOUT_MS = 30_000
+
+
+def _is_retryable_genai_error(exc: BaseException) -> bool:
+    """True for transient google-genai errors (5xx or 429 rate-limit)."""
+    if isinstance(exc, genai_errors.ServerError):
+        return True
+    if isinstance(exc, genai_errors.ClientError):
+        return getattr(exc, "code", None) == 429
+    return False
+
 
 SYSTEM_PROMPT = """You are a travel route planner. Return ONLY valid JSON matching this schema exactly — no markdown, no explanation, no extra keys:
 
@@ -124,7 +137,7 @@ async def generate_route(request: TripRequest) -> RouteResponse:
                 config=config,
             )
             break
-        except _RETRYABLE_EXCEPTIONS as e:
+        except _RETRYABLE_LEGACY_EXCEPTIONS as e:
             if attempt == _MAX_ATTEMPTS - 1:
                 logger.error(
                     "Gemini API failed after %d attempts: %s", _MAX_ATTEMPTS, e
@@ -138,6 +151,34 @@ async def generate_route(request: TripRequest) -> RouteResponse:
                 "Gemini API call failed (attempt %d/%d): %s. Retrying in %ds.",
                 attempt + 1,
                 _MAX_ATTEMPTS,
+                e,
+                delay,
+            )
+            await asyncio.sleep(delay)
+        except genai_errors.APIError as e:
+            if not _is_retryable_genai_error(e) or attempt == _MAX_ATTEMPTS - 1:
+                logger.error(
+                    "Gemini API error (code=%s) after attempt %d/%d: %s",
+                    getattr(e, "code", "?"),
+                    attempt + 1,
+                    _MAX_ATTEMPTS,
+                    e,
+                )
+                if getattr(e, "code", None) == 429:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="AI service is rate-limited, please try again in a moment",
+                    ) from e
+                raise HTTPException(
+                    status_code=503,
+                    detail="AI service unavailable, please try again",
+                ) from e
+            delay = _BACKOFF_SECONDS[attempt]
+            logger.warning(
+                "Gemini API call failed (attempt %d/%d, code=%s): %s. Retrying in %ds.",
+                attempt + 1,
+                _MAX_ATTEMPTS,
+                getattr(e, "code", "?"),
                 e,
                 delay,
             )
