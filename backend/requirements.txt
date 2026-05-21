@@ -1,4 +1,4 @@
-fastapi
+fastapi<0.137
 uvicorn
 pydantic
 python-dotenv
@@ -7,3 +7,4 @@ google-genai>=0.3.0
 google-api-core
 pytest
 pytest-asyncio
+prometheus-fastapi-instrumentator

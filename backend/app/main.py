@@ -8,8 +8,11 @@ from app.routers.placeholder import router as placeholder_router  # noqa: E402
 from app.routers.routes import router as routes_router  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from prometheus_fastapi_instrumentator import Instrumentator  # noqa: E402
 
 app = FastAPI(title="AI-Voyage API")
+
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     CORSMiddleware,

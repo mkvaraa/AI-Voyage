@@ -3,6 +3,7 @@ import json
 import logging
 import os
 
+from app.metrics import gemini_api_calls_total
 from app.models.schemas import RouteResponse, TripRequest
 from fastapi import HTTPException
 from google import genai
@@ -136,6 +137,7 @@ async def generate_route(request: TripRequest) -> RouteResponse:
                 contents=user_prompt,
                 config=config,
             )
+            gemini_api_calls_total.inc()
             break
         except _RETRYABLE_LEGACY_EXCEPTIONS as e:
             if attempt == _MAX_ATTEMPTS - 1:
