@@ -3,7 +3,7 @@ import secrets
 import time
 
 from aiosqlite import IntegrityError
-from app.database.crud import save_route
+from app.database.crud import get_route_by_slug, save_route
 from app.models.schemas import RouteResponse, TripRequest
 from app.services.route_service import generate_route
 from fastapi import APIRouter, HTTPException
@@ -48,3 +48,11 @@ async def create_route(trip: TripRequest):
     )
 
     return RouteResponseWithSlug(slug=slug, **route.model_dump())
+
+
+@router.get("/route/{slug}", response_model=RouteResponseWithSlug)
+async def read_route(slug: str):
+    data = await get_route_by_slug(slug)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return RouteResponseWithSlug(slug=slug, **data)

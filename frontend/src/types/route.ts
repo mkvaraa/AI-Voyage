@@ -34,3 +34,23 @@ export type RouteResponse = {
   total_budget_estimate: number;
   currency: string;
 };
+
+export type RouteResponseWithSlug = RouteResponse & { slug: string };
+
+export type TripRequest = {
+  destination: string;
+  start_date: string;
+  end_date: string;
+  budget: number;
+  interests: string[];
+};
+
+export type ValidationErrorItem = {
+  loc: (string | number)[];
+  msg: string;
+  type: string;
+};
+
+export type ErrorResponse = {
+  detail: string | ValidationErrorItem[];
+};

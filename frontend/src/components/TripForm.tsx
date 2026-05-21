@@ -1,11 +1,16 @@
 import { useId, useState } from 'react';
 import { Controller, useForm, useWatch, type DefaultValues, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useNavigate } from 'react-router';
 import { format, formatISO } from 'date-fns';
-import { CalendarIcon, Loader2, Plus, X } from 'lucide-react';
+import { CalendarIcon, Plus, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatApiError } from '@/lib/apiError';
 import { tripSchema, MIN_BUDGET, MAX_BUDGET, type TripFormValues } from '@/lib/validation';
+import useGenerateRoute from '@/hooks/useGenerateRoute';
+import ErrorAlert from '@/components/ErrorAlert';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { TripRequest } from '@/types/route';
 
 const INTEREST_OPTIONS = [
   { value: 'culture', label: 'Culture' },
@@ -31,15 +37,7 @@ const MAX_INTEREST_LENGTH = 40;
 
 export type { TripFormValues };
 
-export type TripPayload = {
-  destination: string;
-  start_date: string;
-  end_date: string;
-  budget: number;
-  interests: string[];
-};
-
-const toPayload = (values: TripFormValues): TripPayload => ({
+const toPayload = (values: TripFormValues): TripRequest => ({
   destination: values.destination,
   start_date: formatISO(values.start_date, { representation: 'date' }),
   end_date: formatISO(values.end_date, { representation: 'date' }),
@@ -56,12 +54,13 @@ export default function TripForm() {
   const destinationId = useId();
   const budgetId = useId();
   const interestsLabelId = useId();
+  const navigate = useNavigate();
 
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<TripFormValues>({
     // @hookform/resolvers v5 infers a stricter Resolver input type than RHF expects;
     // the runtime behavior is correct, so we narrow the type here.
@@ -72,10 +71,25 @@ export default function TripForm() {
 
   const startDate = useWatch({ control, name: 'start_date' });
 
+  const { mutate, isPending, isError, error, reset } = useGenerateRoute();
+
   const onSubmit = (values: TripFormValues) => {
-    const payload = toPayload(values);
-    console.log('Trip plan submitted:', payload);
+    mutate(toPayload(values), {
+      onSuccess: (data) => {
+        navigate(`/route/${data.slug}`);
+      },
+    });
   };
+
+  if (isPending) {
+    return (
+      <Card className="mx-auto w-full max-w-xl">
+        <CardContent className="py-10">
+          <LoadingSpinner message="Planning your route..." />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mx-auto w-full max-w-xl">
@@ -86,6 +100,16 @@ export default function TripForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {isError ? (
+          <div className="mb-5">
+            <ErrorAlert
+              message={formatApiError(error)}
+              title="Couldn't plan your route"
+              onRetry={reset}
+              retryLabel="Dismiss"
+            />
+          </div>
+        ) : null}
         <form noValidate className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
           <Field label="Destination" htmlFor={destinationId} error={errors.destination?.message}>
             <Input
@@ -167,15 +191,8 @@ export default function TripForm() {
             )}
           />
 
-          <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="animate-spin" />
-                Planning...
-              </>
-            ) : (
-              'Plan my trip'
-            )}
+          <Button type="submit" className="mt-2 w-full">
+            Plan my trip
           </Button>
         </form>
       </CardContent>

@@ -1,12 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 
+import ErrorAlert from '@/components/ErrorAlert';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
 import StopCard from '@/components/StopCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import mockRoute from '@/mocks/route-response.json';
-import type { Day, RouteResponse } from '@/types/route';
-
-const route = mockRoute as RouteResponse;
+import useRoute from '@/hooks/useRoute';
+import { formatApiError } from '@/lib/apiError';
+import type { Day } from '@/types/route';
 
 const formatDayDate = (iso: string): string => {
   try {
@@ -18,6 +19,35 @@ const formatDayDate = (iso: string): string => {
 
 export default function RoutePage() {
   const { slug } = useParams<{ slug: string }>();
+  const { data: route, isPending, isError, error, refetch } = useRoute(slug);
+
+  if (!slug) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <ErrorAlert title="Missing route" message="No route slug was provided in the URL." />
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <LoadingSkeleton />
+      </div>
+    );
+  }
+
+  if (isError || !route) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <ErrorAlert
+          title="Couldn't load this route"
+          message={formatApiError(error) || 'The route may have expired or been removed.'}
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
@@ -26,7 +56,6 @@ export default function RoutePage() {
         <p className="text-sm text-muted-foreground">
           {route.days.length} {route.days.length === 1 ? 'day' : 'days'} · Estimated{' '}
           {route.currency} {route.total_budget_estimate.toLocaleString()}
-          {slug ? ` · ${slug}` : null}
         </p>
       </header>
 
