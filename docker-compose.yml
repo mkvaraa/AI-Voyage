@@ -19,6 +19,44 @@ services:
     networks:
       - ai-voyage-net
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-voyage-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - backend
+    networks:
+      - ai-voyage-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-voyage-grafana
+    ports:
+      - '3001:3000'
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - ai-voyage-net
+
 networks:
   ai-voyage-net:
     driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
