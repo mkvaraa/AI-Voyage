@@ -2,5 +2,6 @@ from prometheus_client import Counter
 
 gemini_api_calls_total = Counter(
     "gemini_api_calls_total",
-    "Total number of successful Gemini API calls",
+    "Total Gemini API calls",
+    ["status", "model"],
 )

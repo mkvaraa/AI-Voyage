@@ -24,6 +24,7 @@ _RETRYABLE_LEGACY_EXCEPTIONS = (
 _MAX_ATTEMPTS = 3
 _BACKOFF_SECONDS = (1, 2, 4)
 _GEMINI_TIMEOUT_MS = 30_000
+_GEMINI_MODEL = "gemini-2.5-flash"
 
 
 def _is_retryable_genai_error(exc: BaseException) -> bool:
@@ -133,13 +134,18 @@ async def generate_route(request: TripRequest) -> RouteResponse:
     for attempt in range(_MAX_ATTEMPTS):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=_GEMINI_MODEL,
                 contents=user_prompt,
                 config=config,
             )
-            gemini_api_calls_total.inc()
+            gemini_api_calls_total.labels(
+                status="success", model=_GEMINI_MODEL
+            ).inc()
             break
         except _RETRYABLE_LEGACY_EXCEPTIONS as e:
+            gemini_api_calls_total.labels(
+                status="error", model=_GEMINI_MODEL
+            ).inc()
             if attempt == _MAX_ATTEMPTS - 1:
                 logger.error(
                     "Gemini API failed after %d attempts: %s", _MAX_ATTEMPTS, e
@@ -158,6 +164,9 @@ async def generate_route(request: TripRequest) -> RouteResponse:
             )
             await asyncio.sleep(delay)
         except genai_errors.APIError as e:
+            gemini_api_calls_total.labels(
+                status="error", model=_GEMINI_MODEL
+            ).inc()
             if not _is_retryable_genai_error(e) or attempt == _MAX_ATTEMPTS - 1:
                 logger.error(
                     "Gemini API error (code=%s) after attempt %d/%d: %s",
