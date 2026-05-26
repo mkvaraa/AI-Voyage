@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 
 import ErrorAlert from '@/components/ErrorAlert';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
+import RouteMap from '@/components/RouteMap';
 import StopCard from '@/components/StopCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import useRoute from '@/hooks/useRoute';
@@ -63,6 +64,10 @@ export default function RoutePage() {
         {route.days.map((day) => (
           <DaySection key={day.day} day={day} />
         ))}
+      </div>
+
+      <div className="overflow-hidden rounded-lg border">
+        <RouteMap />
       </div>
     </div>
   );
