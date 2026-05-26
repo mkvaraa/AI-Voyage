@@ -20,7 +20,7 @@ services:
       - ai-voyage-net
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.55.1
     container_name: ai-voyage-prometheus
     ports:
       - '9090:9090'
@@ -36,7 +36,7 @@ services:
       - ai-voyage-net
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.3.0
     container_name: ai-voyage-grafana
     ports:
       - '3001:3000'
