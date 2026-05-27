@@ -2,7 +2,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import Map, { Marker, Popup, type MapRef } from 'react-map-gl';
+import Map, { Layer, Marker, Popup, Source, type MapRef } from 'react-map-gl';
+import type { FeatureCollection, LineString } from 'geojson';
 
 import { Badge } from '@/components/ui/badge';
 import type { Day, Stop } from '@/types/route';
@@ -54,6 +55,23 @@ export default function RouteMap({ days }: RouteMapProps) {
 
   const stops = useMemo<Stop[]>(() => days.flatMap((day) => day.stops), [days]);
 
+  const routeGeoJson = useMemo<FeatureCollection<LineString> | null>(() => {
+    if (stops.length < 2) return null;
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: stops.map((s) => [s.lng, s.lat]),
+          },
+        },
+      ],
+    };
+  }, [stops]);
+
   const presentCategories = useMemo<PinCategory[]>(() => {
     const order: PinCategory[] = ['attraction', 'food', 'hotel'];
     const present = new Set(stops.map((s) => categoryForType(s.type)));
@@ -101,6 +119,22 @@ export default function RouteMap({ days }: RouteMapProps) {
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
       >
+        {routeGeoJson && (
+          <Source id="route-line" type="geojson" data={routeGeoJson}>
+            <Layer
+              id="route-line-layer"
+              type="line"
+              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+              paint={{
+                'line-color': '#6366f1',
+                'line-width': 3,
+                'line-opacity': 0.8,
+                'line-dasharray': [2, 1],
+              }}
+            />
+          </Source>
+        )}
+
         {stops.map((stop) => (
           <Marker
             key={stop.id}
