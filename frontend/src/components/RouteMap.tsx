@@ -1,9 +1,10 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import Map, { Marker, type MapRef } from 'react-map-gl';
+import Map, { Marker, Popup, type MapRef } from 'react-map-gl';
 
+import { Badge } from '@/components/ui/badge';
 import type { Day, Stop } from '@/types/route';
 
 const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
@@ -19,23 +20,45 @@ interface RouteMapProps {
 const ROME_LAT = 41.9;
 const ROME_LNG = 12.5;
 
-const pinClassForType = (type: Stop['type']): string => {
+type PinCategory = 'food' | 'hotel' | 'attraction';
+
+const categoryForType = (type: Stop['type']): PinCategory => {
   switch (type) {
     case 'restaurant':
     case 'food':
-      return 'bg-orange-500 ring-orange-200';
+      return 'food';
     case 'hotel':
-      return 'bg-green-500 ring-green-200';
-    case 'attraction':
+      return 'hotel';
     default:
-      return 'bg-blue-500 ring-blue-200';
+      return 'attraction';
   }
 };
 
+const pinClassForCategory: Record<PinCategory, string> = {
+  food: 'bg-orange-500 ring-orange-200',
+  hotel: 'bg-green-500 ring-green-200',
+  attraction: 'bg-blue-500 ring-blue-200',
+};
+
+const categoryLabel: Record<PinCategory, string> = {
+  food: 'Food & drink',
+  hotel: 'Hotel',
+  attraction: 'Attraction',
+};
+
+const pinClassForType = (type: Stop['type']): string => pinClassForCategory[categoryForType(type)];
+
 export default function RouteMap({ days }: RouteMapProps) {
   const mapRef = useRef<MapRef | null>(null);
+  const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
 
   const stops = useMemo<Stop[]>(() => days.flatMap((day) => day.stops), [days]);
+
+  const presentCategories = useMemo<PinCategory[]>(() => {
+    const order: PinCategory[] = ['attraction', 'food', 'hotel'];
+    const present = new Set(stops.map((s) => categoryForType(s.type)));
+    return order.filter((c) => present.has(c));
+  }, [stops]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -66,27 +89,86 @@ export default function RouteMap({ days }: RouteMapProps) {
   const initial = stops[0];
 
   return (
-    <Map
-      ref={mapRef}
-      mapboxAccessToken={token}
-      initialViewState={{
-        latitude: initial?.lat ?? ROME_LAT,
-        longitude: initial?.lng ?? ROME_LNG,
-        zoom: 12,
-      }}
-      style={{ width: '100%', height: 500 }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
-    >
-      {stops.map((stop) => (
-        <Marker key={stop.id} latitude={stop.lat} longitude={stop.lng} anchor="bottom">
-          <div
-            title={stop.name}
-            className={`h-4 w-4 rounded-full ring-2 ring-offset-1 ring-offset-white shadow ${pinClassForType(
-              stop.type
-            )}`}
-          />
-        </Marker>
-      ))}
-    </Map>
+    <div className="relative" style={{ width: '100%', height: 500 }}>
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={token}
+        initialViewState={{
+          latitude: initial?.lat ?? ROME_LAT,
+          longitude: initial?.lng ?? ROME_LNG,
+          zoom: 12,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+      >
+        {stops.map((stop) => (
+          <Marker
+            key={stop.id}
+            latitude={stop.lat}
+            longitude={stop.lng}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setSelectedStop(stop);
+            }}
+          >
+            <div
+              title={stop.name}
+              className={`h-4 w-4 cursor-pointer rounded-full ring-2 ring-offset-1 ring-offset-white shadow ${pinClassForType(
+                stop.type
+              )}`}
+            />
+          </Marker>
+        ))}
+
+        {selectedStop && (
+          <Popup
+            latitude={selectedStop.lat}
+            longitude={selectedStop.lng}
+            anchor="bottom"
+            offset={16}
+            closeOnClick={false}
+            onClose={() => setSelectedStop(null)}
+          >
+            <div className="flex max-w-[200px] flex-col gap-1.5 p-1">
+              <h3 className="text-sm font-bold leading-tight">{selectedStop.name}</h3>
+              <div>
+                <Badge variant="secondary" className="capitalize">
+                  {selectedStop.type}
+                </Badge>
+              </div>
+              <p className="text-xs text-foreground">{selectedStop.duration_minutes} min</p>
+              {selectedStop.notes && <p className="text-xs text-gray-500">{selectedStop.notes}</p>}
+              {selectedStop.booking_url && (
+                <a
+                  href={selectedStop.booking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline hover:text-blue-700"
+                >
+                  Book now
+                </a>
+              )}
+            </div>
+          </Popup>
+        )}
+      </Map>
+
+      {presentCategories.length > 0 && (
+        <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-md border bg-white/90 px-3 py-2 text-xs shadow-md backdrop-blur-sm">
+          <div className="mb-1 font-semibold text-gray-700">Legend</div>
+          <ul className="flex flex-col gap-1">
+            {presentCategories.map((category) => (
+              <li key={category} className="flex items-center gap-2">
+                <span
+                  className={`h-3 w-3 rounded-full ring-2 ring-offset-1 ring-offset-white ${pinClassForCategory[category]}`}
+                />
+                <span className="text-gray-700">{categoryLabel[category]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
