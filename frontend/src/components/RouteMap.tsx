@@ -1,8 +1,8 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import Map, { Layer, Marker, Popup, Source, type MapRef } from 'react-map-gl';
+import Map, { Layer, Marker, Popup, Source, useMap } from 'react-map-gl';
 import type { FeatureCollection, LineString } from 'geojson';
 
 import { Badge } from '@/components/ui/badge';
@@ -79,8 +79,41 @@ const categoryLabel: Record<PinCategory, string> = {
 
 const pinClassForType = (type: Stop['type']): string => pinClassForCategory[categoryForType(type)];
 
+function FitBoundsToStops({ stops }: { stops: Stop[] }) {
+  const { current: map } = useMap();
+
+  useEffect(() => {
+    if (!map || stops.length === 0) return;
+
+    if (stops.length === 1) {
+      map.flyTo({ center: [stops[0].lng, stops[0].lat], zoom: 13, duration: 1000 });
+      return;
+    }
+
+    let minLat = stops[0].lat;
+    let maxLat = stops[0].lat;
+    let minLng = stops[0].lng;
+    let maxLng = stops[0].lng;
+    for (const s of stops) {
+      if (s.lat < minLat) minLat = s.lat;
+      if (s.lat > maxLat) maxLat = s.lat;
+      if (s.lng < minLng) minLng = s.lng;
+      if (s.lng > maxLng) maxLng = s.lng;
+    }
+
+    map.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      { padding: 60, duration: 1000 }
+    );
+  }, [map, stops]);
+
+  return null;
+}
+
 export default function RouteMap({ days }: RouteMapProps) {
-  const mapRef = useRef<MapRef | null>(null);
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
 
   const stops = useMemo<Stop[]>(() => days.flatMap((day) => day.stops), [days]);
@@ -108,21 +141,6 @@ export default function RouteMap({ days }: RouteMapProps) {
     return order.filter((c) => present.has(c));
   }, [stops]);
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || stops.length === 0) return;
-
-    if (stops.length === 1) {
-      map.easeTo({ center: [stops[0].lng, stops[0].lat], zoom: 13, duration: 600 });
-      return;
-    }
-
-    const bounds = new mapboxgl.LngLatBounds();
-    stops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
-
-    map.fitBounds(bounds, { padding: 48, duration: 600, maxZoom: 15 });
-  }, [stops]);
-
   if (!token) {
     return (
       <div
@@ -139,7 +157,6 @@ export default function RouteMap({ days }: RouteMapProps) {
   return (
     <div className="relative" style={{ width: '100%', height: 500 }}>
       <Map
-        ref={mapRef}
         mapboxAccessToken={token}
         initialViewState={{
           latitude: initial?.lat ?? ROME_LAT,
@@ -149,6 +166,8 @@ export default function RouteMap({ days }: RouteMapProps) {
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
       >
+        <FitBoundsToStops stops={stops} />
+
         {routeGeoJson && (
           <Source id="route-line" type="geojson" data={routeGeoJson}>
             <Layer
