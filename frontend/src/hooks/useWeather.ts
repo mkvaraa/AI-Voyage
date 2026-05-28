@@ -4,7 +4,6 @@ import type { WeatherData } from '@/types/weather';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY as string | undefined;
 
-const ONE_CALL_URL = 'https://api.openweathermap.org/data/3.0/onecall';
 const CURRENT_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
 async function fetchWeather(lat: number, lng: number): Promise<WeatherData> {
@@ -12,49 +11,23 @@ async function fetchWeather(lat: number, lng: number): Promise<WeatherData> {
     throw new Error('Missing VITE_OPENWEATHER_KEY environment variable');
   }
 
-  try {
-    const { data } = await axios.get(ONE_CALL_URL, {
-      params: {
-        lat,
-        lon: lng,
-        appid: API_KEY,
-        units: 'metric',
-        exclude: 'minutely,hourly,alerts',
-      },
-    });
+  const { data } = await axios.get(CURRENT_URL, {
+    params: {
+      lat,
+      lon: lng,
+      appid: API_KEY,
+      units: 'metric',
+    },
+  });
 
-    const current = data.current;
-    const weather = current?.weather?.[0];
+  const weather = data.weather?.[0];
 
-    return {
-      temp: current.temp,
-      description: weather?.description ?? '',
-      icon: weather?.icon ?? '',
-      humidity: current.humidity,
-    };
-  } catch (err) {
-    // Fallback to free tier 2.5 endpoint if One Call 3.0 requires a subscription.
-    if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
-      const { data } = await axios.get(CURRENT_URL, {
-        params: {
-          lat,
-          lon: lng,
-          appid: API_KEY,
-          units: 'metric',
-        },
-      });
-
-      const weather = data.weather?.[0];
-
-      return {
-        temp: data.main.temp,
-        description: weather?.description ?? '',
-        icon: weather?.icon ?? '',
-        humidity: data.main.humidity,
-      };
-    }
-    throw err;
-  }
+  return {
+    temp: data.main.temp,
+    description: weather?.description ?? '',
+    icon: weather?.icon ?? '',
+    humidity: data.main.humidity,
+  };
 }
 
 export function useWeather(lat: number, lng: number) {

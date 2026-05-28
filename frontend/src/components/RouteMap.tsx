@@ -6,7 +6,37 @@ import Map, { Layer, Marker, Popup, Source, type MapRef } from 'react-map-gl';
 import type { FeatureCollection, LineString } from 'geojson';
 
 import { Badge } from '@/components/ui/badge';
+import { useWeather } from '@/hooks/useWeather';
 import type { Day, Stop } from '@/types/route';
+
+function WeatherBadge({ lat, lng }: { lat: number; lng: number }) {
+  const { data, isLoading, isError } = useWeather(lat, lng);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-6 w-6 animate-pulse rounded bg-gray-200" />
+        <div className="h-3 w-16 animate-pulse rounded bg-gray-200" />
+      </div>
+    );
+  }
+
+  if (isError || !data) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      <img
+        src={`https://openweathermap.org/img/wn/${data.icon}.png`}
+        alt={data.description}
+        className="h-6 w-6"
+        width={24}
+        height={24}
+      />
+      <span className="text-xs font-bold">{Math.round(data.temp)}°C</span>
+      <span className="text-xs capitalize text-gray-500">{data.description}</span>
+    </div>
+  );
+}
 
 const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
@@ -173,6 +203,7 @@ export default function RouteMap({ days }: RouteMapProps) {
               </div>
               <p className="text-xs text-foreground">{selectedStop.duration_minutes} min</p>
               {selectedStop.notes && <p className="text-xs text-gray-500">{selectedStop.notes}</p>}
+              <WeatherBadge lat={selectedStop.lat} lng={selectedStop.lng} />
               {selectedStop.booking_url && (
                 <a
                   href={selectedStop.booking_url}
