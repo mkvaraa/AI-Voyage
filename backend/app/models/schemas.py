@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -39,3 +39,5 @@ class RouteResponse(BaseModel):
     days: list[Day]
     total_budget_estimate: float
     currency: str = "USD"
+    slug: str | None = None
+    created_at: datetime | None = None

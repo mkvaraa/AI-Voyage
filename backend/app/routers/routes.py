@@ -1,8 +1,6 @@
 import logging
-import secrets
 import time
 
-from aiosqlite import IntegrityError
 from app.database.crud import get_route_by_slug, save_route
 from app.models.schemas import RouteResponse, TripRequest
 from app.services.route_service import generate_route
@@ -12,32 +10,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["routes"])
 
-MAX_SLUG_ATTEMPTS = 5
 
-
-class RouteResponseWithSlug(RouteResponse):
-    slug: str
-
-
-@router.post("/route", response_model=RouteResponseWithSlug)
+@router.post("/route", response_model=RouteResponse)
 async def create_route(trip: TripRequest):
     start_time = time.perf_counter()
     logger.info("POST /route received: destination=%s", trip.destination)
 
     route = await generate_route(trip)
-
-    for _ in range(MAX_SLUG_ATTEMPTS):
-        slug = secrets.token_urlsafe(6)
-        try:
-            await save_route(slug, route)
-            break
-        except IntegrityError:
-            continue
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not generate a unique slug, please retry",
-        )
+    slug = await save_route(route)
+    route.slug = slug
 
     elapsed = time.perf_counter() - start_time
     logger.info(
@@ -47,12 +28,12 @@ async def create_route(trip: TripRequest):
         elapsed,
     )
 
-    return RouteResponseWithSlug(slug=slug, **route.model_dump())
+    return route
 
 
-@router.get("/route/{slug}", response_model=RouteResponseWithSlug)
+@router.get("/route/{slug}", response_model=RouteResponse)
 async def read_route(slug: str):
     data = await get_route_by_slug(slug)
     if data is None:
         raise HTTPException(status_code=404, detail="Route not found")
-    return RouteResponseWithSlug(slug=slug, **data)
+    return RouteResponse(**{**data, "slug": slug})
