@@ -30,11 +30,13 @@ async def get_route_by_slug(slug: str) -> dict | None:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT data_json FROM routes WHERE slug = ?",
+            "SELECT data_json, created_at FROM routes WHERE slug = ?",
             (slug,),
         ) as cursor:
             row = await cursor.fetchone()
 
     if row is None:
         return None
-    return json.loads(row["data_json"])
+    data = json.loads(row["data_json"])
+    data["created_at"] = row["created_at"]
+    return data
