@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import ErrorAlert from '@/components/ErrorAlert';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import RouteMap from '@/components/RouteMap';
+import ShareButton from '@/components/ShareButton';
 import StopCard from '@/components/StopCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import useRoute from '@/hooks/useRoute';
@@ -13,6 +14,14 @@ import type { Day } from '@/types/route';
 const formatDayDate = (iso: string): string => {
   try {
     return format(parseISO(iso), 'MMMM d');
+  } catch {
+    return iso;
+  }
+};
+
+const formatCreatedAt = (iso: string): string => {
+  try {
+    return format(parseISO(iso), 'MMMM d, yyyy');
   } catch {
     return iso;
   }
@@ -53,11 +62,19 @@ export default function RoutePage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{route.title}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{route.title}</h1>
+          {slug && <ShareButton slug={slug} />}
+        </div>
         <p className="text-sm text-muted-foreground">
           {route.days.length} {route.days.length === 1 ? 'day' : 'days'} · Estimated{' '}
           {route.currency} {route.total_budget_estimate.toLocaleString()}
         </p>
+        {route.created_at && (
+          <p className="text-xs text-muted-foreground">
+            Generated on {formatCreatedAt(route.created_at)}
+          </p>
+        )}
       </header>
 
       <div className="flex flex-col gap-6">
