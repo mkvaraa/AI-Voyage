@@ -35,7 +35,7 @@ export type RouteResponse = {
   currency: string;
 };
 
-export type RouteResponseWithSlug = RouteResponse & { slug: string };
+export type RouteResponseWithSlug = RouteResponse & { slug: string; created_at?: string };
 
 export type TripRequest = {
   destination: string;

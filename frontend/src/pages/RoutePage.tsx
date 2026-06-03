@@ -19,6 +19,14 @@ const formatDayDate = (iso: string): string => {
   }
 };
 
+const formatCreatedAt = (iso: string): string => {
+  try {
+    return format(parseISO(iso), 'MMMM d, yyyy');
+  } catch {
+    return iso;
+  }
+};
+
 export default function RoutePage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: route, isPending, isError, error, refetch } = useRoute(slug);
@@ -62,6 +70,11 @@ export default function RoutePage() {
           {route.days.length} {route.days.length === 1 ? 'day' : 'days'} · Estimated{' '}
           {route.currency} {route.total_budget_estimate.toLocaleString()}
         </p>
+        {route.created_at && (
+          <p className="text-xs text-muted-foreground">
+            Generated on {formatCreatedAt(route.created_at)}
+          </p>
+        )}
       </header>
 
       <div className="flex flex-col gap-6">
