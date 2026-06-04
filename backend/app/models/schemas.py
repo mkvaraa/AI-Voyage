@@ -34,6 +34,12 @@ class Day(BaseModel):
     stops: list[Stop]
 
 
+class ReplaceStopRequest(BaseModel):
+    stop_id: str = Field(min_length=1)
+    day: int = Field(ge=1)
+    preferences: str | None = None
+
+
 class RouteResponse(BaseModel):
     title: str
     days: list[Day]

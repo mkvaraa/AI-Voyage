@@ -4,7 +4,7 @@ import logging
 import os
 
 from app.metrics import gemini_api_calls_total
-from app.models.schemas import RouteResponse, TripRequest
+from app.models.schemas import RouteResponse, Stop, TripRequest
 from fastapi import HTTPException
 from google import genai
 from google.api_core import exceptions as google_exceptions
@@ -109,6 +109,151 @@ def _ensure_stop_ids(parsed: dict) -> dict:
             if not stop.get("id"):
                 stop["id"] = f"stop_{day_num}_{idx:03d}"
     return parsed
+
+
+REPLACE_STOP_SYSTEM_PROMPT = """You are a travel route planner. Generate ONE replacement stop for the given city and day.
+
+Return ONLY valid JSON matching this schema exactly — no markdown, no explanation, no extra keys:
+
+{
+  "id": "stop_XXX",
+  "name": str,
+  "type": str,
+  "lat": float,
+  "lng": float,
+  "duration_minutes": int,
+  "notes": str,
+  "booking_url": str
+}
+
+Rules:
+- "type" should be one of: landmark, museum, food, nature, shopping, entertainment, transport.
+- Use real coordinates in the specified city.
+- "booking_url" can be an empty string if not applicable.
+- Keep the same "id" as the stop being replaced (it will be provided).
+- The replacement must differ from the original stop and fit user preferences if provided.
+"""
+
+
+async def _call_gemini(
+    *, system_prompt: str, user_prompt: str, max_output_tokens: int = 8192
+) -> str:
+    """Shared Gemini call with retries; returns raw text."""
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    config = types.GenerateContentConfig(
+        system_instruction=system_prompt,
+        response_mime_type="application/json",
+        temperature=0.7,
+        max_output_tokens=max_output_tokens,
+        thinking_config=types.ThinkingConfig(thinking_budget=0),
+        http_options=types.HttpOptions(timeout=_GEMINI_TIMEOUT_MS),
+    )
+
+    response = None
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            response = client.models.generate_content(
+                model=_GEMINI_MODEL,
+                contents=user_prompt,
+                config=config,
+            )
+            gemini_api_calls_total.labels(
+                status="success", model=_GEMINI_MODEL
+            ).inc()
+            break
+        except _RETRYABLE_LEGACY_EXCEPTIONS as e:
+            gemini_api_calls_total.labels(
+                status="error", model=_GEMINI_MODEL
+            ).inc()
+            if attempt == _MAX_ATTEMPTS - 1:
+                logger.error(
+                    "Gemini API failed after %d attempts: %s", _MAX_ATTEMPTS, e
+                )
+                raise HTTPException(
+                    status_code=503,
+                    detail="AI service unavailable, please try again",
+                ) from e
+            await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+        except genai_errors.APIError as e:
+            gemini_api_calls_total.labels(
+                status="error", model=_GEMINI_MODEL
+            ).inc()
+            if not _is_retryable_genai_error(e) or attempt == _MAX_ATTEMPTS - 1:
+                logger.error(
+                    "Gemini API error (code=%s): %s",
+                    getattr(e, "code", "?"),
+                    e,
+                )
+                if getattr(e, "code", None) == 429:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="AI service is rate-limited, please try again in a moment",
+                    ) from e
+                raise HTTPException(
+                    status_code=503,
+                    detail="AI service unavailable, please try again",
+                ) from e
+            await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+
+    text = response.text if response else None
+    if not text:
+        raise ValueError("Empty response from Gemini")
+    return text
+
+
+async def replace_single_stop(
+    route: RouteResponse,
+    stop_id: str,
+    day: int,
+    preferences: str | None,
+) -> Stop:
+    """Ask Gemini for a single replacement stop in the same city/day."""
+    target_day = next((d for d in route.days if d.day == day), None)
+    if target_day is None:
+        raise HTTPException(status_code=404, detail=f"Day {day} not found")
+
+    original = next((s for s in target_day.stops if s.id == stop_id), None)
+    if original is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Stop {stop_id} not found in day {day}",
+        )
+
+    other_stops = [
+        f"- {s.name} ({s.type})" for s in target_day.stops if s.id != stop_id
+    ]
+    other_stops_str = "\n".join(other_stops) if other_stops else "(none)"
+
+    user_prompt = (
+        f"City / trip: {route.title}\n"
+        f"Day: {day} (date: {target_day.date.isoformat()})\n"
+        f"Replace this stop:\n"
+        f"  id={original.id}, name={original.name}, type={original.type}, "
+        f"notes={original.notes}\n"
+        f"Other stops already planned that day (do not duplicate):\n"
+        f"{other_stops_str}\n"
+        f"User preferences for the replacement: "
+        f"{preferences or '(none — pick a reasonable alternative)'}\n"
+        f"Return the replacement stop JSON with id=\"{stop_id}\"."
+    )
+
+    text = await _call_gemini(
+        system_prompt=REPLACE_STOP_SYSTEM_PROMPT,
+        user_prompt=user_prompt,
+        max_output_tokens=1024,
+    )
+
+    try:
+        parsed = json.loads(extract_json(text))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Gemini returned invalid JSON: {e}") from e
+
+    parsed["id"] = stop_id
+
+    try:
+        return Stop(**parsed)
+    except ValidationError as e:
+        raise ValueError(f"Gemini replacement stop failed validation: {e}") from e
 
 
 async def generate_route(request: TripRequest) -> RouteResponse:

@@ -26,6 +26,15 @@ async def save_route(data: RouteResponse) -> str:
     return slug
 
 
+async def update_route(slug: str, data: RouteResponse) -> None:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            "UPDATE routes SET data_json = ? WHERE slug = ?",
+            (data.model_dump_json(), slug),
+        )
+        await db.commit()
+
+
 async def get_route_by_slug(slug: str) -> dict | None:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
