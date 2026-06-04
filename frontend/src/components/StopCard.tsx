@@ -1,4 +1,4 @@
-import { Clock, ExternalLink, MapPin } from 'lucide-react';
+import { Clock, ExternalLink, Loader2, MapPin, RefreshCw } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -36,13 +36,24 @@ const formatTypeLabel = (type: string) =>
 export type StopCardProps = {
   stop: Stop;
   className?: string;
+  onReplace?: () => void;
+  isReplacing?: boolean;
 };
 
-export default function StopCard({ stop, className }: StopCardProps) {
+export default function StopCard({ stop, className, onReplace, isReplacing }: StopCardProps) {
   const hasBooking = Boolean(stop.booking_url?.trim());
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn('group relative overflow-hidden', className)}>
+      {isReplacing ? (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+          aria-live="polite"
+        >
+          <Loader2 aria-hidden="true" className="size-5 animate-spin text-muted-foreground" />
+          <span className="sr-only">Replacing stop…</span>
+        </div>
+      ) : null}
       <CardContent className="flex flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -61,6 +72,20 @@ export default function StopCard({ stop, className }: StopCardProps) {
               </span>
             </div>
           </div>
+          {onReplace ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onReplace}
+              disabled={isReplacing}
+              className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              aria-label={`Replace ${stop.name}`}
+            >
+              <RefreshCw aria-hidden="true" className="size-3.5" />
+              Replace
+            </Button>
+          ) : null}
         </div>
 
         {stop.notes ? (

@@ -7,6 +7,7 @@ import RouteMap from '@/components/RouteMap';
 import ShareButton from '@/components/ShareButton';
 import StopCard from '@/components/StopCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import useReplaceStop from '@/hooks/useReplaceStop';
 import useRoute from '@/hooks/useRoute';
 import { formatApiError } from '@/lib/apiError';
 import type { Day } from '@/types/route';
@@ -30,6 +31,8 @@ const formatCreatedAt = (iso: string): string => {
 export default function RoutePage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: route, isPending, isError, error, refetch } = useRoute(slug);
+  const { mutate: replaceStop, variables: replacingVariables, isPending: isReplacing } =
+    useReplaceStop(slug);
 
   if (!slug) {
     return (
@@ -79,7 +82,16 @@ export default function RoutePage() {
 
       <div className="flex flex-col gap-6">
         {route.days.map((day) => (
-          <DaySection key={day.day} day={day} />
+          <DaySection
+            key={day.day}
+            day={day}
+            onReplaceStop={(stopId) => replaceStop({ stop_id: stopId, day: day.day })}
+            replacingStopId={
+              isReplacing && replacingVariables?.day === day.day
+                ? replacingVariables.stop_id
+                : undefined
+            }
+          />
         ))}
       </div>
 
@@ -90,7 +102,13 @@ export default function RoutePage() {
   );
 }
 
-function DaySection({ day }: { day: Day }) {
+type DaySectionProps = {
+  day: Day;
+  onReplaceStop: (stopId: string) => void;
+  replacingStopId?: string;
+};
+
+function DaySection({ day, onReplaceStop, replacingStopId }: DaySectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -100,7 +118,12 @@ function DaySection({ day }: { day: Day }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {day.stops.map((stop) => (
-          <StopCard key={stop.id} stop={stop} />
+          <StopCard
+            key={stop.id}
+            stop={stop}
+            onReplace={() => onReplaceStop(stop.id)}
+            isReplacing={replacingStopId === stop.id}
+          />
         ))}
       </CardContent>
     </Card>
