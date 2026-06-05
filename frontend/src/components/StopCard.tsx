@@ -41,6 +41,30 @@ export type StopCardProps = {
 };
 
 export default function StopCard({ stop, className, onReplace, isReplacing }: StopCardProps) {
+  if (stop.type === 'loading') {
+    return (
+      <Card
+        className={cn('group relative overflow-hidden', className)}
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <CardContent className="flex flex-col gap-3 p-4">
+          <div className="flex animate-pulse flex-col gap-3">
+            <div className="h-4 w-2/3 rounded bg-muted" />
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-16 rounded-full bg-muted" />
+              <div className="h-3 w-12 rounded bg-muted" />
+              <div className="h-3 w-20 rounded bg-muted" />
+            </div>
+            <div className="h-3 w-full rounded bg-muted" />
+            <div className="h-3 w-5/6 rounded bg-muted" />
+          </div>
+          <span className="sr-only">{stop.name || 'Finding alternative...'}</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const hasBooking = Boolean(stop.booking_url?.trim());
 
   return (
