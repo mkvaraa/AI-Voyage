@@ -35,7 +35,7 @@ export default function Layout() {
         </Suspense>
       </main>
 
-      <footer className="mt-12 border-t border-border/60 bg-background/60 backdrop-blur">
+      <footer className="border-t border-border/60 bg-background/60 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row">
           <div className="flex items-center gap-2">
             <Globe2 className="size-4 text-primary" />

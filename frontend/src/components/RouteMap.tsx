@@ -144,7 +144,7 @@ export default function RouteMap({ days }: RouteMapProps) {
   if (!token) {
     return (
       <div
-        style={{ width: '100%', height: 500 }}
+        style={{ width: '100%', height: '100%', minHeight: 500 }}
         className="flex items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground"
       >
         Map unavailable: VITE_MAPBOX_TOKEN is not set.
@@ -155,7 +155,7 @@ export default function RouteMap({ days }: RouteMapProps) {
   const initial = stops[0];
 
   return (
-    <div className="relative" style={{ width: '100%', height: 500 }}>
+    <div className="relative h-full min-h-[500px] w-full">
       <Map
         mapboxAccessToken={token}
         initialViewState={{

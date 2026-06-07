@@ -31,8 +31,11 @@ const formatCreatedAt = (iso: string): string => {
 export default function RoutePage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: route, isPending, isError, error, refetch } = useRoute(slug);
-  const { mutate: replaceStop, variables: replacingVariables, isPending: isReplacing } =
-    useReplaceStop(slug);
+  const {
+    mutate: replaceStop,
+    variables: replacingVariables,
+    isPending: isReplacing,
+  } = useReplaceStop(slug);
 
   if (!slug) {
     return (
@@ -63,40 +66,44 @@ export default function RoutePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{route.title}</h1>
-          {slug && <ShareButton slug={slug} />}
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] -my-8 w-screen sm:-my-10 lg:h-[calc(100vh-3.5rem)] lg:overflow-hidden">
+      <div className="flex h-full flex-col lg:flex-row">
+        <div className="order-2 h-[60vh] border-t lg:order-1 lg:h-full lg:w-3/5 lg:border-r lg:border-t-0">
+          <RouteMap days={route.days} />
         </div>
-        <p className="text-sm text-muted-foreground">
-          {route.days.length} {route.days.length === 1 ? 'day' : 'days'} · Estimated{' '}
-          {route.currency} {route.total_budget_estimate.toLocaleString()}
-        </p>
-        {route.created_at && (
-          <p className="text-xs text-muted-foreground">
-            Generated on {formatCreatedAt(route.created_at)}
-          </p>
-        )}
-      </header>
 
-      <div className="flex flex-col gap-6">
-        {route.days.map((day) => (
-          <DaySection
-            key={day.day}
-            day={day}
-            onReplaceStop={(stopId) => replaceStop({ stop_id: stopId, day: day.day })}
-            replacingStopId={
-              isReplacing && replacingVariables?.day === day.day
-                ? replacingVariables.stop_id
-                : undefined
-            }
-          />
-        ))}
-      </div>
+        <div className="order-1 flex flex-col lg:order-2 lg:h-full lg:w-2/5 lg:overflow-y-auto">
+          <header className="flex flex-col gap-2 border-b bg-background/80 px-6 py-5 backdrop-blur lg:sticky lg:top-0 lg:z-10">
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{route.title}</h1>
+              {slug && <ShareButton slug={slug} />}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {route.days.length} {route.days.length === 1 ? 'day' : 'days'} · Estimated{' '}
+              {route.currency} {route.total_budget_estimate.toLocaleString()}
+            </p>
+            {route.created_at && (
+              <p className="text-xs text-muted-foreground">
+                Generated on {formatCreatedAt(route.created_at)}
+              </p>
+            )}
+          </header>
 
-      <div className="overflow-hidden rounded-lg border">
-        <RouteMap days={route.days} />
+          <div className="flex flex-col gap-6 px-6 py-6">
+            {route.days.map((day) => (
+              <DaySection
+                key={day.day}
+                day={day}
+                onReplaceStop={(stopId) => replaceStop({ stop_id: stopId, day: day.day })}
+                replacingStopId={
+                  isReplacing && replacingVariables?.day === day.day
+                    ? replacingVariables.stop_id
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
