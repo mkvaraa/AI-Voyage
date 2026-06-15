@@ -2,6 +2,7 @@ import { useParams } from 'react-router';
 import { format, parseISO } from 'date-fns';
 
 import ErrorAlert from '@/components/ErrorAlert';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import RouteMap from '@/components/RouteMap';
 import ShareButton from '@/components/ShareButton';
@@ -69,7 +70,15 @@ export default function RoutePage() {
     <div className="relative left-1/2 right-1/2 -mx-[50vw] -my-8 w-screen sm:-my-10 lg:h-[calc(100vh-3.5rem)] lg:overflow-hidden">
       <div className="flex h-full flex-col lg:flex-row">
         <div className="order-2 h-[300px] border-t md:h-[500px] lg:order-1 lg:h-full lg:w-3/5 lg:border-r lg:border-t-0">
-          <RouteMap days={route.days} />
+          <ErrorBoundary
+            fallback={
+              <div className="flex h-full items-center justify-center px-4 py-6 text-center text-sm text-muted-foreground">
+                The map failed to load. The rest of the route is still available.
+              </div>
+            }
+          >
+            <RouteMap days={route.days} />
+          </ErrorBoundary>
         </div>
 
         <div className="order-1 flex flex-col lg:order-2 lg:h-full lg:w-2/5 lg:overflow-y-auto">

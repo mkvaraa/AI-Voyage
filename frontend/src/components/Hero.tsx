@@ -13,7 +13,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="flex items-center py-16 lg:py-24 px-6">
+    <section className="flex items-center py-16 lg:py-18 px-6">
       <div className="w-full max-w-7xl mx-auto grid lg:grid-cols-[1fr_1fr] gap-10 xl:gap-16 items-center">
         {/* Left */}
         <div>
