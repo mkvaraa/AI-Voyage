@@ -68,14 +68,14 @@ export default function RoutePage() {
   return (
     <div className="relative left-1/2 right-1/2 -mx-[50vw] -my-8 w-screen sm:-my-10 lg:h-[calc(100vh-3.5rem)] lg:overflow-hidden">
       <div className="flex h-full flex-col lg:flex-row">
-        <div className="order-2 h-[60vh] border-t lg:order-1 lg:h-full lg:w-3/5 lg:border-r lg:border-t-0">
+        <div className="order-2 h-[300px] border-t md:h-[500px] lg:order-1 lg:h-full lg:w-3/5 lg:border-r lg:border-t-0">
           <RouteMap days={route.days} />
         </div>
 
         <div className="order-1 flex flex-col lg:order-2 lg:h-full lg:w-2/5 lg:overflow-y-auto">
-          <header className="flex flex-col gap-2 border-b bg-background/80 px-6 py-5 backdrop-blur lg:sticky lg:top-0 lg:z-10">
+          <header className="flex flex-col gap-2 border-b bg-background/80 px-4 py-4 backdrop-blur sm:px-6 sm:py-5 lg:sticky lg:top-0 lg:z-10">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{route.title}</h1>
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl">{route.title}</h1>
               {slug && <ShareButton slug={slug} />}
             </div>
             <p className="text-sm text-muted-foreground">
@@ -89,7 +89,7 @@ export default function RoutePage() {
             )}
           </header>
 
-          <div className="flex flex-col gap-6 px-6 py-6">
+          <div className="flex flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
             {route.days.map((day) => (
               <DaySection
                 key={day.day}
@@ -119,7 +119,7 @@ function DaySection({ day, onReplaceStop, replacingStopId }: DaySectionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">
+        <CardTitle className="text-base sm:text-lg">
           Day {day.day} — {formatDayDate(day.date)}
         </CardTitle>
       </CardHeader>

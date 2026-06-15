@@ -48,7 +48,7 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
         aria-busy="true"
         aria-live="polite"
       >
-        <CardContent className="flex flex-col gap-3 p-4">
+        <CardContent className="flex flex-col gap-3 p-3 sm:p-4">
           <div className="flex animate-pulse flex-col gap-3">
             <div className="h-4 w-2/3 rounded bg-muted" />
             <div className="flex items-center gap-2">
@@ -78,10 +78,10 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
           <span className="sr-only">Replacing stop…</span>
         </div>
       ) : null}
-      <CardContent className="flex flex-col gap-3 p-4">
+      <CardContent className="flex flex-col gap-2 p-3 sm:gap-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <h3 className="text-base font-bold leading-tight">{stop.name}</h3>
+            <h3 className="text-sm font-bold leading-tight sm:text-base">{stop.name}</h3>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Badge variant={typeVariant(stop.type)} className="capitalize">
                 {formatTypeLabel(stop.type)}
@@ -103,7 +103,7 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
               size="sm"
               onClick={onReplace}
               disabled={isReplacing}
-              className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              className="opacity-100 transition-opacity focus-visible:opacity-100 xl:opacity-0 xl:group-hover:opacity-100"
               aria-label={`Replace ${stop.name}`}
             >
               <RefreshCw aria-hidden="true" className="size-3.5" />
@@ -113,7 +113,7 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
         </div>
 
         {stop.notes ? (
-          <p className="text-sm text-muted-foreground leading-relaxed">{stop.notes}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">{stop.notes}</p>
         ) : null}
 
         {hasBooking ? (
