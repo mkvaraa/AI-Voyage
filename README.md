@@ -26,6 +26,11 @@ docker-compose up --build
 | Backend API  | [http://localhost:8000](http://localhost:8000)                       |
 | Health check | [http://localhost:8000/api/health](http://localhost:8000/api/health) |
 
+## Documentation
+
+- [Architecture](docs/architecture.md) — components, deployment topology, and the end-to-end data flow when a user generates a route.
+- [API Reference](docs/api.md) — full reference for all four backend endpoints with request/response schemas, `curl` examples, and error codes.
+
 ## Project Structure
 
 ```
