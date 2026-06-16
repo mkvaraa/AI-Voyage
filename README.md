@@ -1,6 +1,23 @@
 # AI-Voyage
 
-AI-powered travel planner that generates personalized itineraries from a few trip details. The frontend is a React + Vite app, the backend is a FastAPI service that calls OpenAI for itinerary generation, with Mapbox and OpenWeather for maps and forecasts.
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Gemini](https://img.shields.io/badge/Gemini-AI-8E75B2?logo=googlegemini&logoColor=white)](https://ai.google.dev/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> **Live demo:** [gleaming-endurance-production-07af.up.railway.app](https://gleaming-endurance-production-07af.up.railway.app)
+
+AI-powered travel planner that generates personalized itineraries from a few trip details. The frontend is a React + Vite app, the backend is a FastAPI service that calls Google Gemini for itinerary generation, with Mapbox and OpenWeather for maps and forecasts.
+
+## Screenshots
+
+| Landing page | Generated itinerary | Map view with stops |
+| --- | --- | --- |
+| ![Landing page](docs/screenshots/landing.png) | ![Generated itinerary](docs/screenshots/itinerary.png) | ![Map view](docs/screenshots/map.png) |
+
+> Screenshots are placeholders — drop the corresponding PNGs into `docs/screenshots/` to render them.
 
 ## Prerequisites
 
@@ -14,7 +31,7 @@ AI-powered travel planner that generates personalized itineraries from a few tri
 git clone <repo-url> ai-voyage
 cd ai-voyage
 cp .env.example .env
-# Fill in OPENAI_API_KEY, MAPBOX_TOKEN, OPENWEATHER_KEY in .env
+# Fill in GEMINI_API_KEY, MAPBOX_TOKEN, OPENWEATHER_KEY in .env
 docker-compose up --build
 ```
 
@@ -30,6 +47,7 @@ docker-compose up --build
 
 - [Architecture](docs/architecture.md) — components, deployment topology, and the end-to-end data flow when a user generates a route.
 - [API Reference](docs/api.md) — full reference for all four backend endpoints with request/response schemas, `curl` examples, and error codes.
+- [Changelog](CHANGELOG.md) — release notes per version.
 
 ## Project Structure
 
@@ -40,7 +58,7 @@ ai-voyage/
 │   │   ├── database/     SQLite init and session helpers
 │   │   ├── models/       Pydantic / ORM models
 │   │   ├── routers/      API route handlers (routes, health, ...)
-│   │   ├── services/     OpenAI, Mapbox, OpenWeather integrations
+│   │   ├── services/     Gemini, Mapbox, OpenWeather integrations
 │   │   └── main.py       FastAPI app entrypoint
 │   ├── data/             SQLite database files (mounted volume)
 │   ├── Dockerfile
@@ -54,7 +72,7 @@ ai-voyage/
 │   │   └── mocks/        Mock API responses for local dev
 │   ├── nginx.conf        Nginx config for the production image
 │   └── Dockerfile
-├── monitoring/           Monitoring/observability assets
+├── monitoring/           Monitoring/observability assets (Prometheus, Grafana, Alloy)
 ├── docker-compose.yml    Multi-service orchestration
 ├── .env.example          Template for required secrets
 └── pyproject.toml        Python tooling config (lint/format)
