@@ -1,6 +1,6 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import Map, { Layer, Marker, Popup, Source, useMap } from 'react-map-gl';
 import type { FeatureCollection, LineString } from 'geojson';
@@ -81,8 +81,16 @@ const categoryLabel: Record<PinCategory, string> = {
 
 const pinClassForType = (type: Stop['type']): string => pinClassForCategory[categoryForType(type)];
 
+type Bounds = [[number, number], [number, number]];
+
+const boundsEqual = (a: Bounds | null, b: Bounds | null): boolean => {
+  if (!a || !b) return false;
+  return a[0][0] === b[0][0] && a[0][1] === b[0][1] && a[1][0] === b[1][0] && a[1][1] === b[1][1];
+};
+
 function FitBoundsToStops({ stops }: { stops: Stop[] }) {
   const { current: map } = useMap();
+  const prevBoundsRef = useRef<Bounds | null>(null);
 
   useEffect(() => {
     if (!map || stops.length === 0) return;
@@ -103,19 +111,21 @@ function FitBoundsToStops({ stops }: { stops: Stop[] }) {
       if (s.lng > maxLng) maxLng = s.lng;
     }
 
-    map.fitBounds(
-      [
-        [minLng, minLat],
-        [maxLng, maxLat],
-      ],
-      { padding: 60, duration: 1000 }
-    );
+    const nextBounds: Bounds = [
+      [minLng, minLat],
+      [maxLng, maxLat],
+    ];
+
+    if (boundsEqual(prevBoundsRef.current, nextBounds)) return;
+    prevBoundsRef.current = nextBounds;
+
+    map.fitBounds(nextBounds, { padding: 60, duration: 1000 });
   }, [map, stops]);
 
   return null;
 }
 
-export default function RouteMap({ days }: RouteMapProps) {
+function RouteMap({ days }: RouteMapProps) {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -299,3 +309,5 @@ export default function RouteMap({ days }: RouteMapProps) {
     </div>
   );
 }
+
+export default memo(RouteMap);
