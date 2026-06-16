@@ -13,11 +13,11 @@ AI-powered travel planner that generates personalized itineraries from a few tri
 
 ## Screenshots
 
-| Landing page | Generated itinerary | Map view with stops |
-| --- | --- | --- |
-| ![Landing page](docs/screenshots/landing.png) | ![Generated itinerary](docs/screenshots/itinerary.png) | ![Map view](docs/screenshots/map.png) |
+| Landing page | Map view with stops and Generated itinerary|
+| --- | --- |
+| ![Landing page](docs/screenshots/landing.png) | ![Map view and Generated itinerary](docs/screenshots/map.png) |
 
-> Screenshots are placeholders — drop the corresponding PNGs into `docs/screenshots/` to render them.
+
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ docker-compose up --build
 
 | Service      | URL                                                                  |
 | ------------ | -------------------------------------------------------------------- |
-| Frontend     | [http://localhost:3000](http://localhost:3000)                       |
+| Frontend     | [http://localhost:5173](http://localhost:5173)                       |
 | Backend API  | [http://localhost:8000](http://localhost:8000)                       |
 | Health check | [http://localhost:8000/api/health](http://localhost:8000/api/health) |
 
@@ -47,7 +47,6 @@ docker-compose up --build
 
 - [Architecture](docs/architecture.md) — components, deployment topology, and the end-to-end data flow when a user generates a route.
 - [API Reference](docs/api.md) — full reference for all four backend endpoints with request/response schemas, `curl` examples, and error codes.
-- [Changelog](CHANGELOG.md) — release notes per version.
 
 ## Project Structure
 
