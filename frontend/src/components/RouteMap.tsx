@@ -53,10 +53,16 @@ interface RouteMapProps {
 const ROME_LAT = 41.9;
 const ROME_LNG = 12.5;
 
-type PinCategory = 'food' | 'hotel' | 'attraction';
+type PinCategory = 'food' | 'hotel' | 'airport' | 'attraction';
 
-const categoryForType = (type: Stop['type']): PinCategory => {
-  switch (type) {
+const isAirportStop = (stop: Pick<Stop, 'type' | 'name'>): boolean => {
+  if (stop.type === 'airport' || stop.type === 'transport') return true;
+  return /airport|aeropuerto|aéroport|flughafen/i.test(stop.name);
+};
+
+const categoryForStop = (stop: Pick<Stop, 'type' | 'name'>): PinCategory => {
+  if (isAirportStop(stop)) return 'airport';
+  switch (stop.type) {
     case 'restaurant':
     case 'food':
       return 'food';
@@ -70,16 +76,19 @@ const categoryForType = (type: Stop['type']): PinCategory => {
 const pinClassForCategory: Record<PinCategory, string> = {
   food: 'bg-orange-500 ring-orange-200',
   hotel: 'bg-green-500 ring-green-200',
+  airport: 'bg-purple-500 ring-purple-200',
   attraction: 'bg-blue-500 ring-blue-200',
 };
 
 const categoryLabel: Record<PinCategory, string> = {
   food: 'Food & drink',
   hotel: 'Hotel',
+  airport: 'Airport',
   attraction: 'Attraction',
 };
 
-const pinClassForType = (type: Stop['type']): string => pinClassForCategory[categoryForType(type)];
+const pinClassForStop = (stop: Pick<Stop, 'type' | 'name'>): string =>
+  pinClassForCategory[categoryForStop(stop)];
 
 type Bounds = [[number, number], [number, number]];
 
@@ -149,8 +158,8 @@ function RouteMap({ days }: RouteMapProps) {
   }, [stops]);
 
   const presentCategories = useMemo<PinCategory[]>(() => {
-    const order: PinCategory[] = ['attraction', 'food', 'hotel'];
-    const present = new Set(stops.map((s) => categoryForType(s.type)));
+    const order: PinCategory[] = ['attraction', 'food', 'hotel', 'airport'];
+    const present = new Set(stops.map((s) => categoryForStop(s)));
     return order.filter((c) => present.has(c));
   }, [stops]);
 
@@ -211,8 +220,8 @@ function RouteMap({ days }: RouteMapProps) {
           >
             <div
               title={stop.name}
-              className={`h-4 w-4 cursor-pointer rounded-full ring-2 ring-offset-1 ring-offset-white shadow ${pinClassForType(
-                stop.type
+              className={`h-4 w-4 cursor-pointer rounded-full ring-2 ring-offset-1 ring-offset-white shadow ${pinClassForStop(
+                stop
               )}`}
             />
           </Marker>

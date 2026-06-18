@@ -65,10 +65,14 @@ SYSTEM_PROMPT = """You are a travel route planner. Return ONLY valid JSON matchi
 Rules:
 - Each stop must have a unique id in the format "stop_001", "stop_002", etc.
 - Use real coordinates for each location.
-- "type" should be one of: landmark, museum, food, nature, shopping, entertainment, transport.
+- "type" should be one of: landmark, museum, food, nature, shopping, entertainment, transport, hotel.
 - "booking_url" can be empty string if not applicable.
 - "total_budget_estimate" should reflect a realistic estimate for the given budget range.
 - Generate one Day object per calendar day between start_date and end_date (inclusive).
+- The FIRST stop of day 1 MUST be the arrival airport (use the main international airport that serves the destination city — e.g. "Fiumicino Airport (FCO)" for Rome, "Haneda Airport (HND)" for Tokyo). Set its "type" to "transport" and use the airport's real coordinates.
+- The SECOND stop of day 1 MUST be the hotel where the traveler checks in. Set its "type" to "hotel", pick a real, well-rated hotel in the destination that fits the budget, and use its real coordinates.
+- The LAST stop of the LAST day MUST be the departure airport (same airport as the arrival one unless the trip clearly involves multiple cities). Set its "type" to "transport".
+- If the trip is exactly one day, both the first arrival airport stop AND the final departure airport stop must appear on that single day (airport → hotel → ... → airport).
 """
 
 
@@ -157,14 +161,10 @@ async def _call_gemini(
                 contents=user_prompt,
                 config=config,
             )
-            gemini_api_calls_total.labels(
-                status="success", model=_GEMINI_MODEL
-            ).inc()
+            gemini_api_calls_total.labels(status="success", model=_GEMINI_MODEL).inc()
             break
         except _RETRYABLE_LEGACY_EXCEPTIONS as e:
-            gemini_api_calls_total.labels(
-                status="error", model=_GEMINI_MODEL
-            ).inc()
+            gemini_api_calls_total.labels(status="error", model=_GEMINI_MODEL).inc()
             if attempt == _MAX_ATTEMPTS - 1:
                 logger.error(
                     "Gemini API failed after %d attempts: %s", _MAX_ATTEMPTS, e
@@ -175,9 +175,7 @@ async def _call_gemini(
                 ) from e
             await asyncio.sleep(_BACKOFF_SECONDS[attempt])
         except genai_errors.APIError as e:
-            gemini_api_calls_total.labels(
-                status="error", model=_GEMINI_MODEL
-            ).inc()
+            gemini_api_calls_total.labels(status="error", model=_GEMINI_MODEL).inc()
             if not _is_retryable_genai_error(e) or attempt == _MAX_ATTEMPTS - 1:
                 logger.error(
                     "Gemini API error (code=%s): %s",
@@ -234,7 +232,7 @@ async def replace_single_stop(
         f"{other_stops_str}\n"
         f"User preferences for the replacement: "
         f"{preferences or '(none — pick a reasonable alternative)'}\n"
-        f"Return the replacement stop JSON with id=\"{stop_id}\"."
+        f'Return the replacement stop JSON with id="{stop_id}".'
     )
 
     text = await _call_gemini(
@@ -257,8 +255,6 @@ async def replace_single_stop(
 
 
 async def generate_route(request: TripRequest) -> RouteResponse:
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
     user_prompt = (
         f"Plan a trip to {request.destination} "
         f"from {request.start_date} to {request.end_date}. "
@@ -266,99 +262,7 @@ async def generate_route(request: TripRequest) -> RouteResponse:
         f"Interests: {', '.join(request.interests)}."
     )
 
-    config = types.GenerateContentConfig(
-        system_instruction=SYSTEM_PROMPT,
-        response_mime_type="application/json",
-        temperature=0.7,
-        max_output_tokens=8192,
-        thinking_config=types.ThinkingConfig(thinking_budget=0),
-        http_options=types.HttpOptions(timeout=_GEMINI_TIMEOUT_MS),
-    )
-
-    response = None
-    for attempt in range(_MAX_ATTEMPTS):
-        try:
-            response = client.models.generate_content(
-                model=_GEMINI_MODEL,
-                contents=user_prompt,
-                config=config,
-            )
-            gemini_api_calls_total.labels(
-                status="success", model=_GEMINI_MODEL
-            ).inc()
-            break
-        except _RETRYABLE_LEGACY_EXCEPTIONS as e:
-            gemini_api_calls_total.labels(
-                status="error", model=_GEMINI_MODEL
-            ).inc()
-            if attempt == _MAX_ATTEMPTS - 1:
-                logger.error(
-                    "Gemini API failed after %d attempts: %s", _MAX_ATTEMPTS, e
-                )
-                raise HTTPException(
-                    status_code=503,
-                    detail="AI service unavailable, please try again",
-                ) from e
-            delay = _BACKOFF_SECONDS[attempt]
-            logger.warning(
-                "Gemini API call failed (attempt %d/%d): %s. Retrying in %ds.",
-                attempt + 1,
-                _MAX_ATTEMPTS,
-                e,
-                delay,
-            )
-            await asyncio.sleep(delay)
-        except genai_errors.APIError as e:
-            gemini_api_calls_total.labels(
-                status="error", model=_GEMINI_MODEL
-            ).inc()
-            if not _is_retryable_genai_error(e) or attempt == _MAX_ATTEMPTS - 1:
-                logger.error(
-                    "Gemini API error (code=%s) after attempt %d/%d: %s",
-                    getattr(e, "code", "?"),
-                    attempt + 1,
-                    _MAX_ATTEMPTS,
-                    e,
-                )
-                if getattr(e, "code", None) == 429:
-                    raise HTTPException(
-                        status_code=429,
-                        detail="AI service is rate-limited, please try again in a moment",
-                    ) from e
-                raise HTTPException(
-                    status_code=503,
-                    detail="AI service unavailable, please try again",
-                ) from e
-            delay = _BACKOFF_SECONDS[attempt]
-            logger.warning(
-                "Gemini API call failed (attempt %d/%d, code=%s): %s. Retrying in %ds.",
-                attempt + 1,
-                _MAX_ATTEMPTS,
-                getattr(e, "code", "?"),
-                e,
-                delay,
-            )
-            await asyncio.sleep(delay)
-
-    text = response.text
-    if not text:
-        raise ValueError("Empty response from Gemini")
-
-    finish_reason = None
-    try:
-        finish_reason = response.candidates[0].finish_reason
-    except (AttributeError, IndexError, TypeError):
-        pass
-    if finish_reason and str(finish_reason).endswith("MAX_TOKENS"):
-        logger.error(
-            "Gemini response truncated by MAX_TOKENS (got %d chars). "
-            "Increase max_output_tokens.",
-            len(text),
-        )
-        raise HTTPException(
-            status_code=502,
-            detail="AI response was truncated, please try again",
-        )
+    text = await _call_gemini(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
 
     try:
         parsed = json.loads(extract_json(text))
