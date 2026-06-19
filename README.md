@@ -15,11 +15,9 @@ AI-powered travel planner that generates personalized itineraries from a few tri
 
 ## Screenshots
 
-| Landing page | Map view with stops and Generated itinerary|
-| --- | --- |
+| Landing page                                  | Map view with stops and Generated itinerary                   |
+| --------------------------------------------- | ------------------------------------------------------------- |
 | ![Landing page](docs/screenshots/landing.png) | ![Map view and Generated itinerary](docs/screenshots/map.png) |
-
-
 
 ## Prerequisites
 
@@ -41,7 +39,7 @@ docker-compose up --build
 
 | Service      | URL                                                                  |
 | ------------ | -------------------------------------------------------------------- |
-| Frontend     | [http://localhost:5173](http://localhost:5173)                       |
+| Frontend     | [http://localhost:5173](http://localhost:3000)                       |
 | Backend API  | [http://localhost:8000](http://localhost:8000)                       |
 | Health check | [http://localhost:8000/api/health](http://localhost:8000/api/health) |
 

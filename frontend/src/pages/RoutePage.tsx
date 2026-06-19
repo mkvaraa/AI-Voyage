@@ -105,7 +105,9 @@ export default function RoutePage() {
               <DaySection
                 key={day.day}
                 day={day}
-                onReplaceStop={(stopId) => replaceStop({ stop_id: stopId, day: day.day })}
+                onReplaceStop={(stopId, preferences) =>
+                  replaceStop({ stop_id: stopId, day: day.day, preferences })
+                }
                 replacingStopId={
                   isReplacing && replacingVariables?.day === day.day
                     ? replacingVariables.stop_id
@@ -122,7 +124,7 @@ export default function RoutePage() {
 
 type DaySectionProps = {
   day: Day;
-  onReplaceStop: (stopId: string) => void;
+  onReplaceStop: (stopId: string, preferences?: string) => void;
   replacingStopId?: string;
 };
 
@@ -139,7 +141,7 @@ function DaySection({ day, onReplaceStop, replacingStopId }: DaySectionProps) {
           <StopCard
             key={stop.id}
             stop={stop}
-            onReplace={() => onReplaceStop(stop.id)}
+            onReplace={(preferences) => onReplaceStop(stop.id, preferences)}
             isReplacing={replacingStopId === stop.id}
           />
         ))}
