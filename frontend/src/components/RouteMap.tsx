@@ -48,6 +48,8 @@ if (token) {
 
 interface RouteMapProps {
   days: Day[];
+  selectedStopId?: string | null;
+  onSelectedStopChange?: (stopId: string | null) => void;
 }
 
 const ROME_LAT = 41.9;
@@ -97,6 +99,23 @@ const boundsEqual = (a: Bounds | null, b: Bounds | null): boolean => {
   return a[0][0] === b[0][0] && a[0][1] === b[0][1] && a[1][0] === b[1][0] && a[1][1] === b[1][1];
 };
 
+function FocusOnStop({ stop }: { stop: Stop | null }) {
+  const { current: map } = useMap();
+
+  useEffect(() => {
+    if (!map || !stop) return;
+    const currentZoom = map.getZoom();
+    map.flyTo({
+      center: [stop.lng, stop.lat],
+      zoom: Math.max(currentZoom, 14),
+      duration: 800,
+      essential: true,
+    });
+  }, [map, stop?.id, stop?.lat, stop?.lng]);
+
+  return null;
+}
+
 function FitBoundsToStops({ stops }: { stops: Stop[] }) {
   const { current: map } = useMap();
   const prevBoundsRef = useRef<Bounds | null>(null);
@@ -134,11 +153,25 @@ function FitBoundsToStops({ stops }: { stops: Stop[] }) {
   return null;
 }
 
-function RouteMap({ days }: RouteMapProps) {
-  const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
+function RouteMap({ days, selectedStopId, onSelectedStopChange }: RouteMapProps) {
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const stops = useMemo<Stop[]>(() => days.flatMap((day) => day.stops), [days]);
+
+  const isControlled = selectedStopId !== undefined;
+  const activeSelectedId = isControlled ? selectedStopId ?? null : internalSelectedId;
+  const selectedStop = useMemo(
+    () => stops.find((s) => s.id === activeSelectedId) ?? null,
+    [stops, activeSelectedId]
+  );
+
+  const setSelected = (id: string | null) => {
+    if (!isControlled) {
+      setInternalSelectedId(id);
+    }
+    onSelectedStopChange?.(id);
+  };
 
   const routeGeoJson = useMemo<FeatureCollection<LineString> | null>(() => {
     if (stops.length < 2) return null;
@@ -190,6 +223,7 @@ function RouteMap({ days }: RouteMapProps) {
         onLoad={() => setMapLoaded(true)}
       >
         <FitBoundsToStops stops={stops} />
+        <FocusOnStop stop={selectedStop} />
 
         {routeGeoJson && (
           <Source id="route-line" type="geojson" data={routeGeoJson}>
@@ -215,7 +249,7 @@ function RouteMap({ days }: RouteMapProps) {
             anchor="bottom"
             onClick={(e) => {
               e.originalEvent.stopPropagation();
-              setSelectedStop(stop);
+              setSelected(stop.id);
             }}
           >
             <div
@@ -234,7 +268,7 @@ function RouteMap({ days }: RouteMapProps) {
             anchor="bottom"
             offset={20}
             closeOnClick={false}
-            onClose={() => setSelectedStop(null)}
+            onClose={() => setSelected(null)}
             maxWidth="320px"
             className="ai-voyage-popup"
           >

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { format, parseISO } from 'date-fns';
 
@@ -37,6 +38,7 @@ export default function RoutePage() {
     variables: replacingVariables,
     isPending: isReplacing,
   } = useReplaceStop(slug);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
 
   if (!slug) {
     return (
@@ -77,7 +79,11 @@ export default function RoutePage() {
               </div>
             }
           >
-            <RouteMap days={route.days} />
+            <RouteMap
+              days={route.days}
+              selectedStopId={selectedStopId}
+              onSelectedStopChange={setSelectedStopId}
+            />
           </ErrorBoundary>
         </div>
 
@@ -113,6 +119,8 @@ export default function RoutePage() {
                     ? replacingVariables.stop_id
                     : undefined
                 }
+                selectedStopId={selectedStopId}
+                onSelectStop={setSelectedStopId}
               />
             ))}
           </div>
@@ -126,9 +134,17 @@ type DaySectionProps = {
   day: Day;
   onReplaceStop: (stopId: string, preferences?: string) => void;
   replacingStopId?: string;
+  selectedStopId?: string | null;
+  onSelectStop?: (stopId: string) => void;
 };
 
-function DaySection({ day, onReplaceStop, replacingStopId }: DaySectionProps) {
+function DaySection({
+  day,
+  onReplaceStop,
+  replacingStopId,
+  selectedStopId,
+  onSelectStop,
+}: DaySectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -143,6 +159,8 @@ function DaySection({ day, onReplaceStop, replacingStopId }: DaySectionProps) {
             stop={stop}
             onReplace={(preferences) => onReplaceStop(stop.id, preferences)}
             isReplacing={replacingStopId === stop.id}
+            isSelected={selectedStopId === stop.id}
+            onSelect={onSelectStop ? () => onSelectStop(stop.id) : undefined}
           />
         ))}
       </CardContent>

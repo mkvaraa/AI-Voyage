@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Clock, ExternalLink, MapPin, RefreshCw, X } from 'lucide-react';
 
 import LoadingSkeleton from '@/components/LoadingSkeleton';
@@ -41,9 +41,18 @@ export type StopCardProps = {
   className?: string;
   onReplace?: (preferences?: string) => void;
   isReplacing?: boolean;
+  onSelect?: () => void;
+  isSelected?: boolean;
 };
 
-export default function StopCard({ stop, className, onReplace, isReplacing }: StopCardProps) {
+export default function StopCard({
+  stop,
+  className,
+  onReplace,
+  isReplacing,
+  onSelect,
+  isSelected,
+}: StopCardProps) {
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [preferences, setPreferences] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -82,8 +91,36 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
     onReplace?.(trimmed.length > 0 ? trimmed : undefined);
   };
 
+  const isInteractive = Boolean(onSelect) && !isPromptOpen;
+
+  const handleCardClick = () => {
+    if (!isInteractive) return;
+    onSelect?.();
+  };
+
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!isInteractive) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect?.();
+    }
+  };
+
   return (
-    <Card className={cn('group relative overflow-hidden', className)}>
+    <Card
+      className={cn(
+        'group relative overflow-hidden transition-all',
+        isInteractive && 'cursor-pointer hover:border-primary/40 hover:shadow-md',
+        isSelected && 'border-primary ring-2 ring-primary/30',
+        className
+      )}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      aria-label={isInteractive ? `Show ${stop.name} on map` : undefined}
+      aria-pressed={isInteractive ? Boolean(isSelected) : undefined}
+    >
       <CardContent
         className={cn(
           'flex flex-col gap-2 p-3 transition-[filter] duration-200 sm:gap-3 sm:p-4',
@@ -113,7 +150,10 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
               type="button"
               variant="ghost"
               size="sm"
-              onClick={openPrompt}
+              onClick={(event) => {
+                event.stopPropagation();
+                openPrompt();
+              }}
               disabled={isReplacing || isPromptOpen}
               className="opacity-100 transition-opacity focus-visible:opacity-100 xl:opacity-0 xl:group-hover:opacity-100"
               aria-label={`Replace ${stop.name}`}
@@ -135,6 +175,7 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
                 href={stop.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
                 aria-label={`Open booking page for ${stop.name} in a new tab`}
               >
                 <ExternalLink aria-hidden="true" className="size-3.5" />
@@ -151,6 +192,8 @@ export default function StopCard({ stop, className, onReplace, isReplacing }: St
           role="dialog"
           aria-modal="true"
           aria-label={`Replace ${stop.name}`}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
         >
           <form
             className="flex w-full flex-col gap-2"
